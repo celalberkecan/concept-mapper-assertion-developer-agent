@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "concept-mapper"
+version = "0.1.0"
+requires-python = ">=3.11"
+description = "Concept Mapper Agent for survey questionnaire design"
+dependencies = [
+    "survey-agent-lib",
+    "pydantic>=2.0",
+    "openai>=1.0",
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "typer[all]>=0.9",
+    "rich>=13.0",
+    "python-dotenv>=1.0",
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
+lrz = ["torch", "transformers", "accelerate"]
+
+[project.scripts]
+concept-mapper = "concept_mapper.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/concept_mapper"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

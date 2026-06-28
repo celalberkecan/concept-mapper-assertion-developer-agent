@@ -1,0 +1,6 @@
+provider: transformers
+model_path: /path/to/LRZ/model/Qwen2.5-7B-Instruct
+torch_dtype: bfloat16
+device_map: auto
+temperature: 0.0
+max_new_tokens: 1200
