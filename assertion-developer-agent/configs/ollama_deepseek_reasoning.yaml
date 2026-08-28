@@ -1,0 +1,10 @@
+# deepseek-r1:7b is the Qwen-2.5-based reasoning distillation (same model family
+# as DeepSeek-R1-Distill-Qwen-7B used in the transformers configs). It emits a
+# <think>...</think> trace before the answer, so it needs a much larger token
+# budget and a longer HTTP timeout than the instruct models.
+provider: ollama
+model: deepseek-r1:7b
+base_url: http://localhost:11434
+temperature: 0.0
+max_tokens: 4096
+timeout: 600

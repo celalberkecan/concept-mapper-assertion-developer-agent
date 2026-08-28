@@ -59,6 +59,7 @@ def _build_client(provider: str, cfg: dict) -> BaseLLMClient:
             base_url=cfg.get("base_url", "http://localhost:11434"),
             temperature=cfg.get("temperature", 0.0),
             max_tokens=cfg.get("max_tokens", 800),
+            timeout=cfg.get("timeout", 120),
         )
     elif provider == "transformers":
         from survey_agent_lib.llm_clients.transformers_client import TransformersClient
