@@ -1,6 +1,10 @@
+# See transformers.yaml for why load_in_4bit/float16 are used (16GB single-GPU
+# target, e.g. LRZ lrz-v100x2). Llama-3.1-8B in fp16 alone (~16GB) does not fit at
+# all on a 16GB GPU, so 4-bit quantization is not optional here, it's required.
 provider: transformers
 model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/Llama-3.1-8B-Instruct
-torch_dtype: bfloat16
+torch_dtype: float16
 device_map: auto
+load_in_4bit: true
 temperature: 0.0
 max_new_tokens: 1200

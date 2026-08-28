@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lrz = ["torch", "transformers", "accelerate"]
+lrz = ["torch", "transformers", "accelerate", "bitsandbytes"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/survey_agent_lib"]

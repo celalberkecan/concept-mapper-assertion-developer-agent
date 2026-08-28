@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov"]
-lrz = ["torch", "transformers", "accelerate"]
+lrz = ["torch", "transformers", "accelerate", "bitsandbytes"]
 
 [project.scripts]
 concept-mapper = "concept_mapper.cli:app"

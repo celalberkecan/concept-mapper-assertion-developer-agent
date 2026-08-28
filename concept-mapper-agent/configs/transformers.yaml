@@ -1,6 +1,13 @@
+# Targets a single 16GB GPU (e.g. LRZ lrz-v100x2, --gres=gpu:1). An 8B/7B model in
+# fp16/bf16 does not comfortably fit in 16GB alongside a KV cache, so this loads the
+# weights 4-bit quantized (bitsandbytes nf4) instead: ~4-5GB for a 7B model. Requires
+# `pip install bitsandbytes` (included in the "lrz" extra). If you get allocated a
+# bigger GPU (A100/H100, 40GB+), set load_in_4bit to false and torch_dtype to
+# bfloat16 for full-precision generation.
 provider: transformers
 model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/Qwen2.5-7B-Instruct
-torch_dtype: bfloat16
+torch_dtype: float16
 device_map: auto
+load_in_4bit: true
 temperature: 0.0
 max_new_tokens: 1200

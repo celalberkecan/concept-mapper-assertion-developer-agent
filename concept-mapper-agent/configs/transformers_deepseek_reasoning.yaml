@@ -2,9 +2,13 @@
 # trace before the actual answer, which can run several hundred to a few thousand
 # tokens on its own. max_new_tokens is set much higher than the instruct-model
 # configs to avoid truncating generation before the JSON answer is reached.
+# 4-bit quantization (see transformers.yaml) is especially important here: on a
+# 16GB GPU, a 7B model in fp16 (~15GB) would leave almost no room for the long KV
+# cache this model's reasoning trace needs.
 provider: transformers
 model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/DeepSeek-R1-Distill-Qwen-7B
-torch_dtype: bfloat16
+torch_dtype: float16
 device_map: auto
+load_in_4bit: true
 temperature: 0.0
 max_new_tokens: 4096

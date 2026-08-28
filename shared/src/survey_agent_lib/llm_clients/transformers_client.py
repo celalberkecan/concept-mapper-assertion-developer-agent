@@ -28,6 +28,13 @@ class TransformersClient(BaseLLMClient):
         temperature: Sampling temperature; 0.0 uses greedy decoding.
         trust_remote_code: Passed to from_pretrained. Some model families (e.g. GLM)
             ship custom modeling code and fail to load without this.
+        load_in_4bit: Load weights quantized to 4-bit (bitsandbytes nf4) instead of
+            torch_dtype. A 7-8B model drops from ~15-16GB to ~4-5GB — needed on
+            16GB-per-GPU hardware (e.g. LRZ's V100 nodes), where an 8B model in
+            fp16/bf16 does not fit at all and a 7B model leaves no room for KV cache.
+            Requires the `bitsandbytes` package. Takes precedence over load_in_8bit.
+        load_in_8bit: Load weights quantized to 8-bit instead of torch_dtype. Ignored
+            if load_in_4bit is also set. Requires `bitsandbytes`.
     """
 
     def __init__(
@@ -38,6 +45,8 @@ class TransformersClient(BaseLLMClient):
         max_new_tokens: int = 1200,
         temperature: float = 0.0,
         trust_remote_code: bool = False,
+        load_in_4bit: bool = False,
+        load_in_8bit: bool = False,
     ) -> None:
         try:
             import torch
@@ -56,6 +65,23 @@ class TransformersClient(BaseLLMClient):
         }
         resolved_dtype = _dtype_map.get(torch_dtype, "auto")
 
+        quantization_config = None
+        if load_in_4bit or load_in_8bit:
+            try:
+                from transformers import BitsAndBytesConfig
+            except ImportError as exc:
+                raise ImportError(
+                    "bitsandbytes is required for load_in_4bit/load_in_8bit.\n"
+                    "Install with:  pip install bitsandbytes"
+                ) from exc
+            compute_dtype = resolved_dtype if isinstance(resolved_dtype, torch.dtype) else torch.float16
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=load_in_4bit,
+                load_in_8bit=load_in_8bit and not load_in_4bit,
+                bnb_4bit_compute_dtype=compute_dtype,
+                bnb_4bit_quant_type="nf4",
+            )
+
         self._torch = torch
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=trust_remote_code)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -63,6 +89,7 @@ class TransformersClient(BaseLLMClient):
             torch_dtype=resolved_dtype,
             device_map=device_map,
             trust_remote_code=trust_remote_code,
+            quantization_config=quantization_config,
         )
         self.model.eval()
 

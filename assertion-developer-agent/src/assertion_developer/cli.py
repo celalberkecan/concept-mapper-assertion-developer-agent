@@ -74,6 +74,8 @@ def _build_client(provider: str, cfg: dict) -> BaseLLMClient:
             max_new_tokens=cfg.get("max_new_tokens", 800),
             temperature=cfg.get("temperature", 0.0),
             trust_remote_code=cfg.get("trust_remote_code", False),
+            load_in_4bit=cfg.get("load_in_4bit", False),
+            load_in_8bit=cfg.get("load_in_8bit", False),
         )
     elif provider == "fake":
         from survey_agent_lib.llm_clients.fake_client import FakeLLMClient
