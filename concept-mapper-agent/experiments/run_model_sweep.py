@@ -56,6 +56,12 @@ from run_fewshot_ablation import (  # noqa: E402
     build_zero_shot,
 )
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):  # type: ignore[no-redef]
+        return iterable
+
 DATA_PATH = REPO_ROOT / "data" / "gesis_concept_mapper_assertion_evaluation_adjusted.xlsx"
 OUT_DIR = REPO_ROOT / "experiments" / "outputs"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -117,7 +123,8 @@ def run_variant(
     name: str, build_fn, gold_rows: list[dict], client: BaseLLMClient, use_topic_injection: bool
 ) -> list[dict]:
     records = []
-    for i, row in enumerate(gold_rows, 1):
+    progress = tqdm(gold_rows, desc=name, unit="topic")
+    for row in progress:
         topic = row["input_topic_parent_concept"]
         cid = row["concept_id"]
         messages = build_fn(topic)
@@ -138,7 +145,10 @@ def run_variant(
                 record = {"concept_id": cid, "input_topic": topic, "error": str(exc)}
 
         status = "OK" if "error" not in record else f"ERROR: {record['error'][:150]}"
-        print(f"[{name}] {i}/{len(gold_rows)} {topic!r} -> {status}")
+        if hasattr(progress, "write"):
+            progress.write(f"[{name}] {topic!r} -> {status}")
+        else:
+            print(f"[{name}] {topic!r} -> {status}")
         records.append(record)
     return records
 
