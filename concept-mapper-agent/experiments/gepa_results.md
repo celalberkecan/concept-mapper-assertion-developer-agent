@@ -166,8 +166,10 @@ which the current metric weights only indirectly via the judge's coverage score.
 ## Next step
 
 Run this same optimized instruction (and the original hand-written one, for
-comparison) against the LRZ open-source models (Qwen2.5-7B-Instruct,
-Llama-3.1-8B-Instruct, DeepSeek-R1-Distill-Qwen-7B) via `TransformersClient`, scored
+comparison) against the LRZ open-source models (Qwen3-8B, Llama-3.1-8B-Instruct,
+DeepSeekR1-0528-Qwen3-8B — upgraded from the originally-planned Qwen2.5-7B-Instruct
+and DeepSeek-R1-Distill-Qwen-7B after benchmark research showed both are meaningfully
+stronger, more current models in the same size class) via `TransformersClient`, scored
 with the same fixed `gpt-4.1-mini` judge for cross-model comparability, to test whether
 a prompt optimized against gpt-4o-mini transfers to smaller open models or needs
 per-model re-optimization.

@@ -1,4 +1,4 @@
-model: qwen2.5:7b-instruct
+model: qwen3:8b
 base_url: http://localhost:11434
 temperature: 0.0
 max_tokens: 800
