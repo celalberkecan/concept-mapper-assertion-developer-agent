@@ -35,17 +35,33 @@ def read_concept_mapper_gold_xlsx(
     Only the columns in GOLD_COLUMNS are returned. The indicator_model field
     is normalised: NaN (CI rows) becomes the string "NA". The
     gold_indicators_conceptual placeholder for CI rows is normalised to "".
-    """
-    df = pd.read_excel(path, sheet_name=sheet_name)
 
-    missing = [c for c in GOLD_COLUMNS if c not in df.columns]
+    If the sheet has concept_level_ci_cp_leo / concept_level_indicatory_leo columns
+    (human-relabeled gold, more reliable than the original *_gold columns), those
+    values are used instead wherever present, falling back to the *_gold columns for
+    any row left unlabeled.
+    """
+    raw_df = pd.read_excel(path, sheet_name=sheet_name)
+
+    missing = [c for c in GOLD_COLUMNS if c not in raw_df.columns]
     if missing:
         raise ValueError(
             f"Excel sheet {sheet_name!r} is missing expected columns: {missing}\n"
-            f"Found columns: {list(df.columns)}"
+            f"Found columns: {list(raw_df.columns)}"
         )
 
-    df = df[GOLD_COLUMNS].copy()
+    df = raw_df[GOLD_COLUMNS].copy()
+
+    if "concept_level_ci_cp_leo" in raw_df.columns:
+        leo_ci_cp = raw_df["concept_level_ci_cp_leo"]
+        df["concept_level_ci_cp_gold"] = leo_ci_cp.where(
+            leo_ci_cp.notna(), df["concept_level_ci_cp_gold"]
+        )
+    if "concept_level_indicatory_leo" in raw_df.columns:
+        leo_indicator_model = raw_df["concept_level_indicatory_leo"]
+        df["concept_level_indicator_model_gold"] = leo_indicator_model.where(
+            leo_indicator_model.notna(), df["concept_level_indicator_model_gold"]
+        )
 
     # Normalise NaN indicator_model (CI rows) → "NA"
     df["concept_level_indicator_model_gold"] = (
@@ -57,8 +73,11 @@ def read_concept_mapper_gold_xlsx(
         lambda v: "" if str(v).strip() == _CI_PLACEHOLDER else str(v)
     )
 
-    # Ensure indicator_count is int
-    df["indicator_count_gold"] = df["indicator_count_gold"].astype(int)
+    # CI rows always have 0 indicators; fill in any un-annotated CI rows before
+    # casting to int. CP rows left blank stay NaN -> Int64 pd.NA (can't be guessed).
+    is_ci = df["concept_level_ci_cp_gold"] == "CI"
+    df.loc[is_ci, "indicator_count_gold"] = df.loc[is_ci, "indicator_count_gold"].fillna(0)
+    df["indicator_count_gold"] = df["indicator_count_gold"].astype("Int64")
 
     return df.to_dict(orient="records")
 

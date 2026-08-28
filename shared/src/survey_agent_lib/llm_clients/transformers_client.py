@@ -21,8 +21,13 @@ class TransformersClient(BaseLLMClient):
         model_path: Local path or HuggingFace Hub identifier of the model.
         torch_dtype: Weight dtype — 'bfloat16' (recommended), 'float16', 'float32', or 'auto'.
         device_map: Passed to from_pretrained; 'auto' distributes across available GPUs.
-        max_new_tokens: Hard token budget for generation.
+        max_new_tokens: Hard token budget for generation. Reasoning models (e.g.
+            DeepSeek-R1-distill) need a much larger budget than instruct models — their
+            <think>...</think> trace alone can run several hundred to a few thousand
+            tokens before the actual answer starts.
         temperature: Sampling temperature; 0.0 uses greedy decoding.
+        trust_remote_code: Passed to from_pretrained. Some model families (e.g. GLM)
+            ship custom modeling code and fail to load without this.
     """
 
     def __init__(
@@ -32,6 +37,7 @@ class TransformersClient(BaseLLMClient):
         device_map: str = "auto",
         max_new_tokens: int = 1200,
         temperature: float = 0.0,
+        trust_remote_code: bool = False,
     ) -> None:
         try:
             import torch
@@ -51,11 +57,12 @@ class TransformersClient(BaseLLMClient):
         resolved_dtype = _dtype_map.get(torch_dtype, "auto")
 
         self._torch = torch
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=trust_remote_code)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=resolved_dtype,
             device_map=device_map,
+            trust_remote_code=trust_remote_code,
         )
         self.model.eval()
 
@@ -71,17 +78,11 @@ class TransformersClient(BaseLLMClient):
         temperature = temperature if temperature is not None else self.default_temperature
         max_tokens = max_tokens if max_tokens is not None else self.max_new_tokens
 
-        if hasattr(self.tokenizer, "apply_chat_template"):
-            prompt_text: str = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        else:
-            prompt_text = _build_simple_prompt(messages)
+        prompt_text = self._render_prompt(messages)
 
         inputs = self.tokenizer(prompt_text, return_tensors="pt")
         input_ids = inputs["input_ids"].to(self.model.device)
+        attention_mask = inputs["attention_mask"].to(self.model.device)
         input_len = input_ids.shape[-1]
 
         gen_kwargs: dict[str, Any] = {
@@ -95,10 +96,49 @@ class TransformersClient(BaseLLMClient):
             gen_kwargs["do_sample"] = False
 
         with self._torch.no_grad():
-            output_ids = self.model.generate(input_ids, **gen_kwargs)
+            output_ids = self.model.generate(input_ids, attention_mask=attention_mask, **gen_kwargs)
 
         new_token_ids = output_ids[0][input_len:]
         return self.tokenizer.decode(new_token_ids, skip_special_tokens=True)
+
+    def _render_prompt(self, messages: list[dict]) -> str:
+        if not hasattr(self.tokenizer, "apply_chat_template"):
+            return _build_simple_prompt(messages)
+
+        try:
+            return self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        except Exception:
+            # Some chat templates (e.g. Gemma-2, older Mistral-Instruct) reject a
+            # leading "system" role outright. Fall back to folding it into the first
+            # user turn rather than failing the whole generation call.
+            merged = _merge_system_into_first_user(messages)
+            return self.tokenizer.apply_chat_template(
+                merged,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+
+def _merge_system_into_first_user(messages: list[dict]) -> list[dict]:
+    """Fold a leading system message into the first user turn.
+
+    Used as a fallback when a tokenizer's chat template doesn't support a
+    separate "system" role at all (raises instead of rendering it).
+    """
+    if not messages or messages[0]["role"] != "system":
+        return messages
+
+    system_content = messages[0]["content"]
+    rest = messages[1:]
+    if rest and rest[0]["role"] == "user":
+        merged_first = {"role": "user", "content": f"{system_content}\n\n{rest[0]['content']}"}
+        return [merged_first, *rest[1:]]
+    # No user turn to merge into (shouldn't normally happen) — demote system to user.
+    return [{"role": "user", "content": system_content}, *rest]
 
 
 def _build_simple_prompt(messages: list[dict]) -> str:

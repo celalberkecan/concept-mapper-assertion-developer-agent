@@ -73,6 +73,7 @@ def _build_client(provider: str, cfg: dict) -> BaseLLMClient:
             device_map=cfg.get("device_map", "auto"),
             max_new_tokens=cfg.get("max_new_tokens", 800),
             temperature=cfg.get("temperature", 0.0),
+            trust_remote_code=cfg.get("trust_remote_code", False),
         )
     elif provider == "fake":
         from survey_agent_lib.llm_clients.fake_client import FakeLLMClient
@@ -95,7 +96,6 @@ def _build_client(provider: str, cfg: dict) -> BaseLLMClient:
 def develop_assertion(
     parent_concept: str = typer.Option(..., "--parent-concept", help="The parent concept (e.g. 'fear of crime')."),
     indicator_name: str = typer.Option(..., "--indicator-name", help="The indicator name (e.g. 'fear of burglary')."),
-    indicator_definition: str = typer.Option(..., "--indicator-definition", help="The indicator definition."),
     indicator_role: str = typer.Option("component", "--indicator-role", help="The indicator role (component/manifestation/direct/other)."),
     provider: str = typer.Option("openai", "--provider", "-p", help="LLM provider: openai | ollama | transformers"),
     config: Optional[Path] = typer.Option(None, "--config", "-c", help="Path to a YAML config file."),
@@ -114,7 +114,7 @@ def develop_assertion(
 
     with console.status("Calling LLM..."):
         assertion, raw_text = agent.develop_assertion_with_raw(
-            parent_concept, indicator_name, indicator_definition, indicator_role
+            parent_concept, indicator_name, indicator_role
         )
 
     if show_raw:
@@ -142,15 +142,15 @@ def smoke_test() -> None:
 
     agent = AssertionDeveloperAgent(FakeLLMClient())
     cases = [
-        ("fear of crime", "fear of burglary", "Worry or fear that one's home may be broken into.", "component"),
-        ("age", "age", "The respondent's chronological age in years.", "direct"),
-        ("electoral participation", "voted in last election", "Whether the respondent cast a vote in the most recent election.", "component"),
+        ("fear of crime", "fear of burglary", "component"),
+        ("age", "age", "direct"),
+        ("electoral participation", "voted in last election", "component"),
     ]
     failures: list[str] = []
 
-    for parent, name, defn, role in cases:
+    for parent, name, role in cases:
         try:
-            a = agent.develop_assertion(parent, name, defn, role)
+            a = agent.develop_assertion(parent, name, role)
             console.print(
                 Panel(
                     Pretty(a.model_dump()),
@@ -200,7 +200,6 @@ def run_assertions_from_concept_maps(
             total_jobs.append((
                 cm, concept_id, parent,
                 parent,
-                cm.get("construct_definition", ""),
                 "direct",
                 0,
             ))
@@ -209,7 +208,6 @@ def run_assertions_from_concept_maps(
                 total_jobs.append((
                     cm, concept_id, parent,
                     ind.get("name", ""),
-                    ind.get("definition", ""),
                     ind.get("role", "component"),
                     idx,
                 ))
@@ -221,11 +219,11 @@ def run_assertions_from_concept_maps(
 
     records: list[dict] = []
     for i, job in enumerate(total_jobs, 1):
-        cm, concept_id, parent, ind_name, ind_defn, ind_role, idx = job
+        cm, concept_id, parent, ind_name, ind_role, idx = job
         console.print(f"[{i}/{len(total_jobs)}] {concept_id}  {ind_name!r}", end=" ")
 
         try:
-            assertion = agent.develop_assertion(parent, ind_name, ind_defn, ind_role)
+            assertion = agent.develop_assertion(parent, ind_name, ind_role)
             record = {
                 "source_concept_id": concept_id,
                 "source_ci_or_cp": cm.get("ci_or_cp"),
@@ -331,6 +329,120 @@ def evaluate_assertions(
     console.print()
 
 
+@app.command("run-batch-from-gold")
+def run_batch_from_gold(
+    gold: Path = typer.Option(..., "--gold", "-g", help="Path to the gold Excel file."),
+    sheet: str = typer.Option("Source Items + Assertions (cor)", "--sheet", "-s", help="Sheet name to read."),
+    provider: str = typer.Option("openai", "--provider", "-p", help="LLM provider: openai | ollama | transformers"),
+    config: Optional[Path] = typer.Option(None, "--config", "-c", help="Path to a YAML config file."),
+    output: Path = typer.Option(..., "--output", "-o", help="Output JSONL file path."),
+) -> None:
+    """Run the agent over every CP-parent indicator in the gold Excel sheet and save predictions to JSONL.
+
+    Feeds indicator_concept_gold directly as input (bypassing Concept Mapper), so the
+    Assertion Developer's own accuracy is measured in isolation from Concept Mapper's
+    indicator generation — see the concept-mapper-agent DSPy experiment notes for why
+    that separation matters (component-level vs end-to-end evaluation).
+    """
+    from .io import read_assertion_gold_xlsx
+
+    cfg = _load_config(config)
+    client = _build_client(provider, cfg)
+    agent = AssertionDeveloperAgent(client)
+
+    gold_rows = read_assertion_gold_xlsx(gold, sheet_name=sheet)
+    console.print(
+        f"[bold]Batch run (gold)[/bold] — {len(gold_rows)} indicators  "
+        f"[dim]provider={provider}  output={output}[/dim]\n"
+    )
+
+    # Written incrementally (one line per row, flushed immediately) rather than
+    # collected in memory and written once at the end — a 92-row batch of real LLM
+    # calls can be interrupted (Ctrl+C, network blip, terminal closed); writing only
+    # at the end means any interruption silently loses ALL progress with a 0-byte
+    # output file and no error.
+    output.parent.mkdir(parents=True, exist_ok=True)
+    n_ok = 0
+    n_err = 0
+    with open(output, "w", encoding="utf-8") as f:
+        for i, row in enumerate(gold_rows, 1):
+            example_id = row["example_id"]
+            parent = row["input_topic_parent_concept"]
+            indicator_name = row["indicator_concept_gold"]
+            console.print(f"[{i}/{len(gold_rows)}] {example_id}  {indicator_name!r}", end=" ")
+
+            try:
+                assertion = agent.develop_assertion(parent, indicator_name, "component")
+                record = {"example_id": example_id, **assertion.model_dump()}
+                console.print("[green]OK[/green]")
+                n_ok += 1
+            except Exception as exc:
+                record = {
+                    "example_id": example_id,
+                    "parent_concept": parent,
+                    "input_indicator": indicator_name,
+                    "error": str(exc),
+                }
+                console.print(f"[red]ERROR[/red] {exc}")
+                n_err += 1
+
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            f.flush()
+
+    console.print(f"\n[green]Done.[/green] {n_ok} OK, {n_err} errors → {output}")
+
+
+@app.command("evaluate-gold")
+def evaluate_gold(
+    gold: Path = typer.Option(..., "--gold", "-g", help="Path to the gold Excel file."),
+    sheet: str = typer.Option("Source Items + Assertions (cor)", "--sheet", "-s", help="Sheet name to read."),
+    predictions: Path = typer.Option(..., "--predictions", "-p", help="JSONL predictions file from run-batch-from-gold."),
+    output: Path = typer.Option(..., "--output", "-o", help="Output CSV file path."),
+    judge_provider: Optional[str] = typer.Option(
+        None,
+        "--judge-provider",
+        help="If set (openai | ollama | transformers), scores concept-assertion alignment "
+        "against gold_assertion via LLM-as-judge (llm_judge.py). Adds one LLM call per row. "
+        "Omit to skip (free, deterministic-only: basic_concept + structure_code exact match).",
+    ),
+    judge_config: Optional[Path] = typer.Option(
+        None, "--judge-config", help="YAML config for the judge client (model, temperature, ...)."
+    ),
+) -> None:
+    """Evaluate gold-based predictions against the professor's rubric: basic_concept
+    identification, structure_code correctness, and (optionally) concept-assertion
+    alignment."""
+    import pandas as pd
+
+    from .assertion_evaluator import compute_gold_summary, evaluate_batch_against_gold
+    from .io import read_assertion_gold_xlsx
+
+    gold_rows = read_assertion_gold_xlsx(gold, sheet_name=sheet)
+    pred_records = read_jsonl(predictions)
+
+    judge_client = None
+    if judge_provider:
+        judge_client = _build_client(judge_provider, _load_config(judge_config))
+        console.print(f"[dim]Using {judge_provider} as concept-assertion-alignment judge[/dim]\n")
+
+    eval_records = evaluate_batch_against_gold(gold_rows, pred_records, judge_client=judge_client)
+
+    df = pd.DataFrame(eval_records)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output, index=False)
+
+    summary = compute_gold_summary(eval_records)
+
+    console.print(f"\n[bold]Gold evaluation complete[/bold] → {output}\n")
+    console.print(f"  Total rows                 : {summary['total_rows']}")
+    console.print(f"  Basic concept accuracy     : {summary['basic_concept_accuracy']}")
+    console.print(f"  Structure code accuracy    : {summary['structure_code_accuracy']}")
+    if judge_client is not None:
+        console.print(f"  Mean alignment score (1-5) : {summary['mean_alignment_score_1to5']}")
+    if summary["n_errors"]:
+        console.print(f"  [yellow]Errors / missing           : {summary['n_errors']}[/yellow]")
+
+
 @app.command("run-pipeline")
 def run_pipeline(
     topic: str = typer.Option(..., "--topic", "-t", help="The survey topic to process end-to-end."),
@@ -396,23 +508,23 @@ def run_pipeline(
 
     ad_agent = AssertionDeveloperAgent(client)
 
-    # Build the list of (indicator_name, indicator_definition, indicator_role, index)
+    # Build the list of (indicator_name, indicator_role, index)
     if ci_or_cp == "CI":
-        jobs = [(topic, concept_map.construct_definition, "direct", 0)]
+        jobs = [(topic, "direct", 0)]
     else:
         jobs = [
-            (ind.name, ind.definition, ind.role, idx)
+            (ind.name, ind.role, idx)
             for idx, ind in enumerate(concept_map.indicators)
         ]
 
     records: list[dict] = []
-    for ind_name, ind_defn, ind_role, idx in jobs:
+    for ind_name, ind_role, idx in jobs:
         n = idx + 1
         console.print(f"  [[bold]{n}/{n_assertions}[/bold]]  [cyan]{ind_name}[/cyan]")
 
         try:
             with console.status(f"  Developing assertion for {ind_name!r}..."):
-                assertion = ad_agent.develop_assertion(topic, ind_name, ind_defn, ind_role)
+                assertion = ad_agent.develop_assertion(topic, ind_name, ind_role)
 
             vt_color = "yellow" if assertion.variable_type == "subjective" else "blue"
             console.print(f"         variable_type  [{vt_color}]{assertion.variable_type}[/{vt_color}]")

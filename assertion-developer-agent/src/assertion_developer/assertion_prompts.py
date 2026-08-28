@@ -12,7 +12,6 @@ _EXAMPLE_FEAR_OF_BURGLARY: str = json.dumps(
     {
         "parent_concept": "fear of crime",
         "input_indicator": "fear of burglary",
-        "indicator_definition": "Worry or fear that one's home may be broken into.",
         "variable_type": "subjective",
         "basic_concept": "feelings",
         "domain": "burglary / home victimization",
@@ -31,7 +30,6 @@ _EXAMPLE_VOTED: str = json.dumps(
     {
         "parent_concept": "political participation",
         "input_indicator": "voted in last election",
-        "indicator_definition": "Whether the respondent cast a vote in the most recent election.",
         "variable_type": "objective",
         "basic_concept": "behavior",
         "domain": "electoral participation",
@@ -50,15 +48,14 @@ _EXAMPLE_IMPORTANCE_OF_RELIGION: str = json.dumps(
     {
         "parent_concept": "religiosity",
         "input_indicator": "importance of religion",
-        "indicator_definition": "The degree to which religion matters in the respondent's life.",
         "variable_type": "subjective",
         "basic_concept": "importance",
         "domain": "religious salience",
-        "structure_code": "xli",
+        "structure_code": "xIi",
         "assertion": "Religion is important in the respondent's life.",
         "rationale": (
             "The indicator concerns the subjective importance of a domain. "
-            "Importance assertions use xli: X is important."
+            "Importance assertions use xIi: X is important."
         ),
         "warnings": [],
     },
@@ -69,7 +66,6 @@ _EXAMPLE_AGE: str = json.dumps(
     {
         "parent_concept": "age",
         "input_indicator": "age",
-        "indicator_definition": "The respondent's chronological age in years.",
         "variable_type": "objective",
         "basic_concept": "demographics",
         "domain": "age",
@@ -88,7 +84,6 @@ _EXAMPLE_GENDER_EQUALITY_POLICY: str = json.dumps(
     {
         "parent_concept": "gender equality attitudes",
         "input_indicator": "responsibility to promote gender equality",
-        "indicator_definition": "Belief that it is the government's responsibility to promote gender equality.",
         "variable_type": "subjective",
         "basic_concept": "policies",
         "domain": "gender equality / government responsibility",
@@ -107,15 +102,14 @@ _EXAMPLE_DEMOCRACY_EVALUATION = json.dumps(
     {
         "parent_concept": "satisfaction with democracy",
         "input_indicator": "democracy works well",
-        "indicator_definition": "Evaluation of how well democracy works in the country.",
         "variable_type": "subjective",
         "basic_concept": "evaluation",
         "domain": "functioning of democracy",
-        "structure_code": "xle",
+        "structure_code": "xIe",
         "assertion": "Democracy in the country works well.",
         "rationale": (
             "The indicator evaluates an object or state of affairs. "
-            "Evaluation assertions use xle: X is evaluated as good, bad, effective, or ineffective."
+            "Evaluation assertions use xIe: X is evaluated as good, bad, effective, or ineffective."
         ),
         "warnings": [],
     },
@@ -126,7 +120,6 @@ _EXAMPLE_IMMIGRANT_NORM = json.dumps(
     {
         "parent_concept": "integration norms",
         "input_indicator": "immigrants should adapt to local culture",
-        "indicator_definition": "Normative belief about whether immigrants should adapt to the culture of the receiving country.",
         "variable_type": "subjective",
         "basic_concept": "norms",
         "domain": "immigrant integration / cultural adaptation",
@@ -149,7 +142,7 @@ SYSTEM_PROMPT: str = """
 You are a survey methodology expert specialising in assertion development for 
 questionnaire design, following the Saris & Gallhofer framework.
 
-Your task: given one CI-level survey indicator (a name, definition, and role), 
+Your task: given one CI-level survey indicator (a name and role),
 produce one formal declarative assertion that captures exactly what the indicator measures.
 
 ## What is an assertion?
@@ -177,7 +170,7 @@ Avoid unnecessary belief wrappers:
 * Do NOT write "The respondent believes that the government should promote gender equality" 
   when the selected structure is g(H+I)y.
 * Instead write: "The government should promote gender equality."
-* Do NOT write "The respondent believes democracy works well" when the selected structure is xle.
+* Do NOT write "The respondent believes democracy works well" when the selected structure is xIe.
 * Instead write: "Democracy in the country works well."
 
 ## Variable types
@@ -222,10 +215,10 @@ Use for: behavior, events, time, place, procedures, expectations_future_events
 
 | basic_concept              | allowed codes   | default  |
 | -------------------------- | --------------- | -------- |
-| evaluation                 | xle             | xle      |
-| importance                 | xli             | xli      |
-| values                     | xlv             | xlv      |
-| feelings                   | xlf, xFy, rFy   | rFy      |
+| evaluation                 | xIe             | xIe      |
+| importance                 | xIi             | xIi      |
+| values                     | vIi             | vIi      |
+| feelings                   | xIf, xFy, xPf, rFy | rFy   |
 | cognitive_judgment         | xIc             | xIc      |
 | causal_relationship        | xIca, xCy       | xCy      |
 | similarity_relationship    | xIs, xSy        | xSy      |
@@ -263,7 +256,6 @@ Use for: behavior, events, time, place, procedures, expectations_future_events
 {
 "parent_concept": string,
 "input_indicator": string,
-"indicator_definition": string,
 "variable_type": "subjective" | "objective",
 "basic_concept": string,
 "domain": string,
@@ -278,13 +270,11 @@ Use for: behavior, events, time, place, procedures, expectations_future_events
 def _format_user_message(
     parent_concept: str,
     indicator_name: str,
-    indicator_definition: str,
     indicator_role: str,
 ) -> str:
     return (
         f'Develop assertion for indicator: "{indicator_name}"\n'
         f'Parent concept: "{parent_concept}"\n'
-        f"Indicator definition: {indicator_definition}\n"
         f"Indicator role: {indicator_role}"
     )
 
@@ -292,7 +282,6 @@ def _format_user_message(
 def build_assertion_messages(
     parent_concept: str,
     indicator_name: str,
-    indicator_definition: str,
     indicator_role: str,
 ) -> list[dict]:
     """Build the full message list including few-shot examples for the assertion developer.
@@ -314,7 +303,6 @@ def build_assertion_messages(
             "content": _format_user_message(
                 "fear of crime",
                 "fear of burglary",
-                "Worry or fear that one's home may be broken into.",
                 "component",
             ),
         },
@@ -327,20 +315,18 @@ def build_assertion_messages(
             "content": _format_user_message(
                 "political participation",
                 "voted in last election",
-                "Whether the respondent cast a vote in the most recent election.",
                 "component",
             ),
         },
         {"role": "assistant", "content": _EXAMPLE_VOTED},
 
-        # Few-shot example 3: subjective / importance / xli
+        # Few-shot example 3: subjective / importance / xIi
         # Proposition-style assertion: the domain is important, not "the respondent believes..."
         {
             "role": "user",
             "content": _format_user_message(
                 "religiosity",
                 "importance of religion",
-                "The degree to which religion matters in the respondent's life.",
                 "component",
             ),
         },
@@ -353,20 +339,18 @@ def build_assertion_messages(
             "content": _format_user_message(
                 "gender equality attitudes",
                 "responsibility to promote gender equality",
-                "Belief that it is the government's responsibility to promote gender equality.",
                 "component",
             ),
         },
         {"role": "assistant", "content": _EXAMPLE_GENDER_EQUALITY_POLICY},
 
-        # Few-shot example 5: subjective / evaluation / xle
+        # Few-shot example 5: subjective / evaluation / xIe
         # Proposition-style assertion: the object is evaluated directly.
         {
             "role": "user",
             "content": _format_user_message(
                 "satisfaction with democracy",
                 "democracy works well",
-                "Evaluation of how well democracy works in the country.",
                 "component",
             ),
         },
@@ -379,7 +363,6 @@ def build_assertion_messages(
             "content": _format_user_message(
                 "integration norms",
                 "immigrants should adapt to local culture",
-                "Normative belief about whether immigrants should adapt to the culture of the receiving country.",
                 "component",
             ),
         },
@@ -391,7 +374,6 @@ def build_assertion_messages(
             "content": _format_user_message(
                 parent_concept,
                 indicator_name,
-                indicator_definition,
                 indicator_role,
             ),
         },

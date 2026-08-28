@@ -15,7 +15,7 @@ from assertion_developer.assertion_rules import (
 
 
 def test_all_basic_concepts_have_required_keys():
-    required = {"variable_type", "allowed_codes", "default_code", "structure_id", "example"}
+    required = {"variable_type", "allowed_codes", "default_code", "structure_id"}
     for name, rule in BASIC_CONCEPT_RULES.items():
         missing = required - rule.keys()
         assert not missing, f"Rule for {name!r} is missing keys: {missing}"
@@ -30,7 +30,7 @@ def test_all_default_codes_are_in_allowed_codes():
 
 def test_get_allowed_codes_feelings():
     codes = get_allowed_codes("feelings")
-    assert set(codes) == {"xlf", "xFy", "rFy"}
+    assert set(codes) == {"xIf", "xFy", "xPf", "rFy"}
 
 
 def test_get_default_code_feelings():

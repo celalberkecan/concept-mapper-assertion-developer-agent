@@ -12,7 +12,6 @@ from assertion_developer.assertion_schemas import AssertionOutput
 _VALID_SUBJECTIVE = {
     "parent_concept": "fear of crime",
     "input_indicator": "fear of burglary",
-    "indicator_definition": "Worry or fear that one's home may be broken into.",
     "variable_type": "subjective",
     "basic_concept": "feelings",
     "domain": "burglary / home victimization",
@@ -25,7 +24,6 @@ _VALID_SUBJECTIVE = {
 _VALID_OBJECTIVE = {
     "parent_concept": "age",
     "input_indicator": "age",
-    "indicator_definition": "The respondent's chronological age in years.",
     "variable_type": "objective",
     "basic_concept": "demographics",
     "domain": "age",

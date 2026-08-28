@@ -1,5 +1,5 @@
 provider: transformers
-model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/Qwen2.5-7B-Instruct
+model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/Llama-3.1-8B-Instruct
 torch_dtype: bfloat16
 device_map: auto
 temperature: 0.0

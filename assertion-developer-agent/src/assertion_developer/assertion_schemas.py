@@ -36,7 +36,6 @@ class AssertionOutput(BaseModel):
 
     parent_concept: str
     input_indicator: str
-    indicator_definition: str
     variable_type: Literal["subjective", "objective"]
     basic_concept: str
     domain: str

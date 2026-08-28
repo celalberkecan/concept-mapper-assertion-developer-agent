@@ -71,6 +71,7 @@ def _build_client(provider: str, cfg: dict) -> BaseLLMClient:
             device_map=cfg.get("device_map", "auto"),
             max_new_tokens=cfg.get("max_new_tokens", 1200),
             temperature=cfg.get("temperature", 0.0),
+            trust_remote_code=cfg.get("trust_remote_code", False),
         )
     else:
         console.print(
@@ -206,6 +207,16 @@ def evaluate(
     sheet: str = typer.Option("Concept Mapper Gold", "--sheet", "-s", help="Sheet name to read."),
     predictions: Path = typer.Option(..., "--predictions", "-p", help="JSONL predictions file."),
     output: Path = typer.Option(..., "--output", "-o", help="Output CSV file path."),
+    judge_provider: Optional[str] = typer.Option(
+        None,
+        "--judge-provider",
+        help="If set (openai | ollama | transformers), scores indicator coverage/"
+        "distinctiveness against gold_indicators_conceptual via LLM-as-judge "
+        "(llm_judge.py). Adds one LLM call per CP row. Omit to skip (free, deterministic-only).",
+    ),
+    judge_config: Optional[Path] = typer.Option(
+        None, "--judge-config", help="YAML config for the judge client (model, temperature, ...)."
+    ),
 ) -> None:
     """Evaluate predictions against gold labels and save metrics to CSV."""
     import pandas as pd
@@ -216,7 +227,12 @@ def evaluate(
     gold_rows = read_concept_mapper_gold_xlsx(gold, sheet_name=sheet)
     pred_records = read_jsonl(predictions)
 
-    eval_records = evaluate_batch(gold_rows, pred_records)
+    judge_client = None
+    if judge_provider:
+        judge_client = _build_client(judge_provider, _load_config(judge_config))
+        console.print(f"[dim]Using {judge_provider} as indicator-quality judge[/dim]\n")
+
+    eval_records = evaluate_batch(gold_rows, pred_records, judge_client=judge_client)
 
     df = pd.DataFrame(eval_records)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -230,6 +246,9 @@ def evaluate(
     console.print(f"  CI/CP accuracy      : {summary['ci_cp_accuracy']}")
     console.print(f"  Indicator model acc : {summary['indicator_model_accuracy_cp_only']}  (CP rows only)")
     console.print(f"  Mean count abs diff : {summary['mean_indicator_count_abs_diff_cp_only']}  (CP rows only)")
+    if judge_client is not None:
+        console.print(f"  Mean coverage (1-5)       : {summary['mean_indicator_coverage_1to5_cp_only']}  (CP rows only, LLM-judge)")
+        console.print(f"  Mean distinctiveness (1-5): {summary['mean_indicator_distinctiveness_1to5_cp_only']}  (CP rows only, LLM-judge)")
     if summary["n_errors"]:
         console.print(f"  [yellow]Errors / missing    : {summary['n_errors']}[/yellow]")
 

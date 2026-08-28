@@ -29,12 +29,11 @@ class AssertionDeveloperAgent:
         self,
         parent_concept: str,
         indicator_name: str,
-        indicator_definition: str,
         indicator_role: str,
     ) -> AssertionOutput:
         """Develop an assertion, retrying once with a repair prompt on failure."""
         messages = build_assertion_messages(
-            parent_concept, indicator_name, indicator_definition, indicator_role
+            parent_concept, indicator_name, indicator_role
         )
         raw = self.client.generate(messages)
 
@@ -55,12 +54,11 @@ class AssertionDeveloperAgent:
         self,
         parent_concept: str,
         indicator_name: str,
-        indicator_definition: str,
         indicator_role: str,
     ) -> tuple[AssertionOutput, str]:
         """Same as develop_assertion but also returns the raw LLM response used for parsing."""
         messages = build_assertion_messages(
-            parent_concept, indicator_name, indicator_definition, indicator_role
+            parent_concept, indicator_name, indicator_role
         )
         raw = self.client.generate(messages)
 

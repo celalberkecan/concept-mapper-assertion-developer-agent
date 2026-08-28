@@ -99,7 +99,6 @@ _CANNED_ASSERTIONS: dict[str, dict] = {
     "fear of burglary": {
         "parent_concept": "fear of crime",
         "input_indicator": "fear of burglary",
-        "indicator_definition": "Worry or fear that one's home may be broken into.",
         "variable_type": "subjective",
         "basic_concept": "feelings",
         "domain": "burglary / home victimization",
@@ -114,7 +113,6 @@ _CANNED_ASSERTIONS: dict[str, dict] = {
     "age": {
         "parent_concept": "age",
         "input_indicator": "age",
-        "indicator_definition": "The respondent's chronological age in years.",
         "variable_type": "objective",
         "basic_concept": "demographics",
         "domain": "age",
@@ -126,7 +124,6 @@ _CANNED_ASSERTIONS: dict[str, dict] = {
     "voted in last election": {
         "parent_concept": "electoral participation",
         "input_indicator": "voted in last election",
-        "indicator_definition": "Whether the respondent cast a vote in the most recent election.",
         "variable_type": "objective",
         "basic_concept": "behavior",
         "domain": "electoral participation",

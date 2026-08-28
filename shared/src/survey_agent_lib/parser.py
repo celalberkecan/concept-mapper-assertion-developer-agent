@@ -9,6 +9,13 @@ def extract_json_object(text: str) -> str:
     Handles leading/trailing prose, code fences, and extra whitespace.
     Raises ValueError if no balanced JSON object is found.
     """
+    # Reasoning models (e.g. DeepSeek-R1-distill) emit a <think>...</think> block
+    # before the actual answer. Without stripping it, the first-'{' scan below can
+    # grab a stray brace from inside the reasoning trace instead of the real JSON.
+    think_end = text.find("</think>")
+    if think_end != -1:
+        text = text[think_end + len("</think>") :]
+
     start = text.find("{")
     if start == -1:
         raise ValueError("No JSON object found in the response (no '{' character).")

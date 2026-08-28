@@ -3,4 +3,4 @@ model_path: /dss/dssmcmlfs01/pn25ju/pn25ju-dss-0000/models/Qwen2.5-7B-Instruct
 torch_dtype: bfloat16
 device_map: auto
 temperature: 0.0
-max_new_tokens: 1200
+max_new_tokens: 800

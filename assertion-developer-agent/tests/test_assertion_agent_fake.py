@@ -29,7 +29,6 @@ def test_known_indicator_returns_valid_assertion():
     result = agent.develop_assertion(
         parent_concept="fear of crime",
         indicator_name="fear of burglary",
-        indicator_definition="Worry or fear that one's home may be broken into.",
         indicator_role="component",
     )
     assert isinstance(result, AssertionOutput)
@@ -43,8 +42,7 @@ def test_structure_id_is_derived():
     """structure_id must be set by validation, not by the fake client output."""
     agent = _make_agent()
     result = agent.develop_assertion(
-        "fear of crime", "fear of burglary",
-        "Worry or fear that one's home may be broken into.", "component",
+        "fear of crime", "fear of burglary", "component",
     )
     assert result.structure_id == "structure_2"
 
@@ -53,8 +51,7 @@ def test_unknown_indicator_falls_back_to_default():
     """Indicators not in canned responses fall back to the fear-of-burglary response."""
     agent = _make_agent()
     result = agent.develop_assertion(
-        "some concept", "some unknown indicator",
-        "Some definition.", "component",
+        "some concept", "some unknown indicator", "component",
     )
     assert isinstance(result, AssertionOutput)
     # Falls back to fear of burglary canned response — input_indicator is overwritten
@@ -64,8 +61,7 @@ def test_unknown_indicator_falls_back_to_default():
 def test_develop_assertion_with_raw_returns_raw_string():
     agent = _make_agent()
     result, raw = agent.develop_assertion_with_raw(
-        "fear of crime", "fear of burglary",
-        "Worry or fear that one's home may be broken into.", "component",
+        "fear of crime", "fear of burglary", "component",
     )
     assert isinstance(result, AssertionOutput)
     assert isinstance(raw, str)
@@ -75,8 +71,7 @@ def test_develop_assertion_with_raw_returns_raw_string():
 def test_objective_demographics_assertion():
     agent = _make_agent()
     result = agent.develop_assertion(
-        "age", "age",
-        "The respondent's chronological age in years.", "direct",
+        "age", "age", "direct",
     )
     assert result.variable_type == "objective"
     assert result.basic_concept == "demographics"
@@ -96,7 +91,6 @@ class _FailThenSucceedClient(BaseLLMClient):
         self._valid = json.dumps({
             "parent_concept": "fear of crime",
             "input_indicator": "fear of burglary",
-            "indicator_definition": "Worry or fear that one's home may be broken into.",
             "variable_type": "subjective",
             "basic_concept": "feelings",
             "domain": "burglary",
@@ -117,8 +111,7 @@ def test_repair_retry_triggered_on_parse_failure():
     client = _FailThenSucceedClient()
     agent = AssertionDeveloperAgent(client)
     result = agent.develop_assertion(
-        "fear of crime", "fear of burglary",
-        "Worry or fear that one's home may be broken into.", "component",
+        "fear of crime", "fear of burglary", "component",
     )
     assert isinstance(result, AssertionOutput)
     assert client._calls == 2   # exactly one retry
@@ -133,6 +126,5 @@ def test_raises_after_two_failures():
     agent = AssertionDeveloperAgent(_AlwaysFailClient())
     with pytest.raises(ValueError):
         agent.develop_assertion(
-            "fear of crime", "fear of burglary",
-            "Worry or fear that one's home may be broken into.", "component",
+            "fear of crime", "fear of burglary", "component",
         )
