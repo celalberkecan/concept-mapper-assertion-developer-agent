@@ -1,6 +1,27 @@
 """Rule table mapping basic concepts to allowed assertion structure codes.
 
-Based on Saris & Gallhofer (2007) assertion structure taxonomy.
+Based on Saris & Gallhofer (2007), Table 2.1 "The basic structures of simple
+assertions" and the accompanying notation.
+
+Notation (S&G): x denotes the grammatical subject, I the link verb, P the
+predicator. Standing subject substitutions are g (the government), o (anyone),
+r (the respondent) and v (a value, i.e. a basic goal or state individuals
+strive for). Predicators include C (subject causes object), D (deeds),
+F (feelings), FD (future deeds), H(+I) ("has to"/"should" + infinitive),
+HR ("has the right to"), PR (preferences), S (similarity/difference).
+
+Corrections applied against Table 2.1:
+  * evaluation  xle -> xIe, importance xli -> xIi, feelings xlf -> xIf
+    (capital I, the link verb, had been transcribed as a lowercase l)
+  * values      xlv -> vIi  (the subject is the value itself)
+  * examples rewritten so the assertion's grammatical subject matches its code.
+    Only codes whose subject is r (the respondent) are phrased "The respondent
+    ..."; xIc, xCy, xSy, o(H+I)y, g(H+I)y, xHRy, xFD and xPey take the object
+    as subject, as the notation requires.
+
+rFy, rDy and rD are retained as instantiations of xFy / xDy / xD with the
+respondent as grammatical subject, which the notation explicitly allows.
+
 Each entry contains:
   variable_type  : 'subjective' or 'objective'
   allowed_codes  : list of valid structure codes for this concept
@@ -17,28 +38,30 @@ BASIC_CONCEPT_RULES: dict[str, dict] = {
     # ------------------------------------------------------------------
     "evaluation": {
         "variable_type": "subjective",
-        "allowed_codes": ["xle"],
-        "default_code": "xle",
+        "allowed_codes": ["xIe"],
+        "default_code": "xIe",
         "structure_id": "structure_1",
         "example": "The government is good.",
     },
     "importance": {
         "variable_type": "subjective",
-        "allowed_codes": ["xli"],
-        "default_code": "xli",
+        "allowed_codes": ["xIi"],
+        "default_code": "xIi",
         "structure_id": "structure_1",
-        "example": "Religion is important to the respondent.",
+        "example": "My work is important.",
     },
     "values": {
         "variable_type": "subjective",
-        "allowed_codes": ["xlv"],
-        "default_code": "xlv",
+        "allowed_codes": ["vIi"],
+        "default_code": "vIi",
         "structure_id": "structure_1",
-        "example": "Freedom is an important value to the respondent.",
+        "example": "Honesty is important.",
     },
     "feelings": {
         "variable_type": "subjective",
-        "allowed_codes": ["xlf", "xFy", "rFy"],
+        # xIf is the structure-1 form ("The situation is frightening.");
+        # xFy / xPf are structure 2, with rFy the respondent-subject case.
+        "allowed_codes": ["xIf", "xFy", "xPf", "rFy"],
         "default_code": "rFy",
         "structure_id": "structure_2",
         "example": "The respondent fears burglary.",
@@ -48,49 +71,49 @@ BASIC_CONCEPT_RULES: dict[str, dict] = {
         "allowed_codes": ["xIc"],
         "default_code": "xIc",
         "structure_id": "structure_1",
-        "example": "The respondent considers the economy to be weak.",
+        "example": "The economy is weak.",
     },
     "causal_relationship": {
         "variable_type": "subjective",
         "allowed_codes": ["xIca", "xCy"],
         "default_code": "xCy",
         "structure_id": "structure_2",
-        "example": "The respondent believes unemployment causes crime.",
+        "example": "Unemployment causes crime.",
     },
     "similarity_relationship": {
         "variable_type": "subjective",
         "allowed_codes": ["xIs", "xSy"],
         "default_code": "xSy",
         "structure_id": "structure_2",
-        "example": "The respondent considers party A similar to party B.",
+        "example": "Party A is similar to party B.",
     },
     "preference": {
         "variable_type": "subjective",
         "allowed_codes": ["xIpr", "xPRy"],
         "default_code": "xPRy",
         "structure_id": "structure_2",
-        "example": "The respondent prefers living in the city over the countryside.",
+        "example": "The respondent prefers the city to the countryside.",
     },
     "norms": {
         "variable_type": "subjective",
         "allowed_codes": ["o(H+I)y", "o(H+I)"],
         "default_code": "o(H+I)y",
         "structure_id": "structure_2",
-        "example": "The respondent believes one ought to pay taxes.",
+        "example": "One ought to pay taxes.",
     },
     "policies": {
         "variable_type": "subjective",
         "allowed_codes": ["g(H+I)y"],
         "default_code": "g(H+I)y",
         "structure_id": "structure_2",
-        "example": "The respondent believes the government should reduce inequality.",
+        "example": "The government should reduce inequality.",
     },
     "rights": {
         "variable_type": "subjective",
         "allowed_codes": ["xIri", "xHRy"],
         "default_code": "xHRy",
         "structure_id": "structure_2",
-        "example": "The respondent believes everyone has the right to free speech.",
+        "example": "Everyone has the right to free speech.",
     },
     "action_tendencies": {
         "variable_type": "subjective",
@@ -104,14 +127,14 @@ BASIC_CONCEPT_RULES: dict[str, dict] = {
         "allowed_codes": ["xFDy", "xFD"],
         "default_code": "xFD",
         "structure_id": "structure_3",
-        "example": "The respondent expects the economic situation to worsen.",
+        "example": "The economic situation will worsen.",
     },
     "evaluative_belief": {
         "variable_type": "subjective",
         "allowed_codes": ["xPey", "xPye", "xPe"],
         "default_code": "xPey",
         "structure_id": "structure_2",
-        "example": "The respondent perceives the current government as effective.",
+        "example": "Immigration is good for the economy.",
     },
     # ------------------------------------------------------------------
     # Objective basic concepts
@@ -128,7 +151,7 @@ BASIC_CONCEPT_RULES: dict[str, dict] = {
         "allowed_codes": ["xDy", "xD"],
         "default_code": "xD",
         "structure_id": "structure_3",
-        "example": "The respondent experienced a burglary.",
+        "example": "A burglary occurred.",
     },
     "demographics": {
         "variable_type": "objective",
@@ -170,7 +193,7 @@ BASIC_CONCEPT_RULES: dict[str, dict] = {
         "allowed_codes": ["xDpl_pro"],
         "default_code": "xDpl_pro",
         "structure_id": "structure_3",
-        "example": "The respondent followed a specific procedure to apply for benefits.",
+        "example": "The respondent goes to work by public transport.",
     },
 }
 
