@@ -40,3 +40,7 @@ coverage.xml
 # Output artefacts (generated; not source)
 outputs/*.jsonl
 data/*.jsonl
+
+# Discarded LRZ/bitsandbytes-NF4 Llama run — superseded by the Ollama/GGUF Q4_K_M
+# re-run used for the real cross-model comparison; kept locally for reference only.
+/lrz_llama3_outputs/

@@ -1,0 +1,34 @@
+{
+  "a_zero_shot": {
+    "total_rows": 92,
+    "basic_concept_accuracy": 0.5326,
+    "structure_code_accuracy": 0.4674,
+    "mean_alignment_score_1to5": 4.1558,
+    "n_missing_predictions": 0,
+    "n_errors": 15
+  },
+  "b_prose_fewshot": {
+    "total_rows": 92,
+    "basic_concept_accuracy": 0.5652,
+    "structure_code_accuracy": 0.4239,
+    "mean_alignment_score_1to5": 4.1829,
+    "n_missing_predictions": 0,
+    "n_errors": 10
+  },
+  "c_message_history_fewshot": {
+    "total_rows": 92,
+    "basic_concept_accuracy": 0.5761,
+    "structure_code_accuracy": 0.4457,
+    "mean_alignment_score_1to5": 4.3902,
+    "n_missing_predictions": 0,
+    "n_errors": 10
+  },
+  "d_gepa_optimized": {
+    "total_rows": 92,
+    "basic_concept_accuracy": 0.4783,
+    "structure_code_accuracy": 0.4239,
+    "mean_alignment_score_1to5": 3.9877,
+    "n_missing_predictions": 0,
+    "n_errors": 11
+  }
+}

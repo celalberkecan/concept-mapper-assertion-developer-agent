@@ -1,0 +1,50 @@
+{
+  "a_zero_shot": {
+    "total_rows": 51,
+    "n_gold_ci": 20,
+    "n_gold_cp": 31,
+    "ci_cp_accuracy": 0.9608,
+    "indicator_model_accuracy_cp_only": 0.1935,
+    "mean_indicator_count_abs_diff_cp_only": 2.0,
+    "mean_indicator_coverage_1to5_cp_only": 3.2258,
+    "mean_indicator_distinctiveness_1to5_cp_only": 3.9355,
+    "n_missing_predictions": 0,
+    "n_errors": 0
+  },
+  "b_prose_fewshot": {
+    "total_rows": 51,
+    "n_gold_ci": 20,
+    "n_gold_cp": 31,
+    "ci_cp_accuracy": 0.902,
+    "indicator_model_accuracy_cp_only": 0.2258,
+    "mean_indicator_count_abs_diff_cp_only": 1.7419,
+    "mean_indicator_coverage_1to5_cp_only": 3.2581,
+    "mean_indicator_distinctiveness_1to5_cp_only": 4.0645,
+    "n_missing_predictions": 0,
+    "n_errors": 0
+  },
+  "c_message_history_fewshot": {
+    "total_rows": 51,
+    "n_gold_ci": 20,
+    "n_gold_cp": 31,
+    "ci_cp_accuracy": 0.8824,
+    "indicator_model_accuracy_cp_only": 0.3871,
+    "mean_indicator_count_abs_diff_cp_only": 1.5161,
+    "mean_indicator_coverage_1to5_cp_only": 3.2581,
+    "mean_indicator_distinctiveness_1to5_cp_only": 4.1935,
+    "n_missing_predictions": 0,
+    "n_errors": 0
+  },
+  "d_gepa_optimized": {
+    "total_rows": 51,
+    "n_gold_ci": 20,
+    "n_gold_cp": 31,
+    "ci_cp_accuracy": 0.9608,
+    "indicator_model_accuracy_cp_only": 0.6774,
+    "mean_indicator_count_abs_diff_cp_only": 1.5806,
+    "mean_indicator_coverage_1to5_cp_only": 3.2581,
+    "mean_indicator_distinctiveness_1to5_cp_only": 4.0323,
+    "n_missing_predictions": 0,
+    "n_errors": 0
+  }
+}
