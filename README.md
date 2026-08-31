@@ -19,9 +19,9 @@ Topic string  ──►  Concept Mapper Agent  ──►  Concept Map (CI or CP)
                                          with structure code & structure_id
 ```
 
-**Stage 1 — Concept Mapper** classifies the topic as a Composite Indicator (CI) or Composite Proxy (CP), defines the construct, and extracts indicators.
+**Stage 1 — Concept Mapper** classifies the topic as a concept-by-intuition (CI) or a concept-by-postulation (CP), defines the construct, and extracts indicators.
 
-**Stage 2 — Assertion Developer** takes each indicator and produces one formal declarative assertion using Saris & Gallhofer (2007) linguistic structures, validated against a rule table of 22 basic concepts.
+**Stage 2 — Assertion Developer** takes each indicator and produces one formal declarative assertion using the Saris & Gallhofer linguistic structures, validated against a rule table of 22 basic concepts.
 
 Both stages can be run independently or chained together with a single `run-pipeline` command.
 
@@ -30,7 +30,7 @@ Both stages can be run independently or chained together with a single `run-pipe
 ## Repository Layout
 
 ```
-nlp-css-group1/
+concept-mapper-assertion-developer-agent/
 ├── shared/                          # Shared library (survey-agent-lib)
 │   └── src/survey_agent_lib/
 │       ├── llm_clients/             # BaseLLMClient + provider implementations
@@ -58,13 +58,31 @@ nlp-css-group1/
     ├── src/assertion_developer/
     │   ├── assertion_rules.py       # Rule table: 22 basic concepts → structure codes
     │   ├── assertion_schemas.py     # AssertionOutput Pydantic model (derived structure_id)
-    │   ├── assertion_prompts.py     # System prompt + 5 few-shot examples
+    │   ├── assertion_prompts.py     # System prompt + 6 few-shot examples
     │   ├── assertion_parser.py      # JSON extraction → AssertionOutput
     │   ├── assertion_agent.py       # AssertionDeveloperAgent (with repair retry)
-    │   ├── assertion_evaluator.py   # Rule-based evaluation (no gold labels)
+    │   ├── assertion_evaluator.py   # Gold-based + rule-based evaluation
     │   └── cli.py                   # Typer CLI (develop-assertion, run-pipeline, …)
     └── tests/
 ```
+
+---
+
+## Results and Evaluation Artefacts
+
+| File | What it holds |
+|------|---------------|
+| `BENCHMARK_RESULTS.md` | Consolidated results, four prompting techniques by four models, both agents. |
+| `*/experiments/fewshot_ablation_results.md` | Zero-shot vs prose few-shot vs message-history few-shot. |
+| `*/experiments/gepa_results.md` | DSPy/GEPA prompt optimization and its evaluation. |
+| `*/experiments/outputs/*.jsonl` | Raw per-item predictions for every model and condition. |
+| `*/experiments/outputs/*_summary.json` | Aggregate metrics per model. |
+
+The authoritative gold annotation is
+`assertion-developer-agent/data/gesis_concept_mapper_assertion_evaluation_adjusted_for_assertion_agent_final.xlsx`.
+The `Concept Mapper Gold` sheet holds 46 topics and the `Source Items + Assertions (cor)`
+sheet holds 151 GESIS source items, of which the 92 under CP parent topics form the
+Assertion Developer evaluation set.
 
 ---
 
@@ -74,12 +92,12 @@ nlp-css-group1/
 
 | Term | Meaning |
 |------|---------|
-| **CI** — Composite Indicator | The topic itself is the measurable unit (e.g., *age*, *income*). One assertion is generated directly. |
-| **CP** — Composite Proxy | The topic is a latent construct measured through multiple indicators (e.g., *fear of crime* → fear of burglary, assault, theft). One assertion per indicator. |
+| **CI** — concept-by-intuition | The meaning is immediately intelligible and one direct item can measure it (e.g., *age*, *income*). One assertion is generated directly. |
+| **CP** — concept-by-postulation | The topic is a construct that acquires meaning from theory and is measured through several indicators (e.g., *fear of crime* → fear of terrorism, burglary, fraud, sexual harassment). One assertion per indicator. |
 | **Formative** | Indicators define the construct — removing one changes the construct. |
 | **Reflective** | Indicators are manifestations of the construct — they should correlate. |
 
-### Assertion Linguistic Structures (Saris & Gallhofer 2007)
+### Assertion Linguistic Structures (Saris & Gallhofer)
 
 The Assertion Developer maps each indicator to one of three formal linguistic structures:
 
@@ -185,6 +203,11 @@ python -m assertion_developer run-pipeline \
   Topic      : 'fear of crime'
   Assertions : 3 generated
 ```
+
+> The transcript above is illustrative output, not a gold label. In the annotated
+> reference data `fear of crime` is a CP with a **reflective** indicator model.
+> Distinguishing formative from reflective is the least stable decision the
+> Concept Mapper makes, which is reported in `BENCHMARK_RESULTS.md`.
 
 ### Pipeline output schema (JSONL)
 
@@ -295,6 +318,12 @@ Total: **67 tests**, all passing.
 
 ## LRZ / Transformers (LMU GPU Servers)
 
+The `transformers` provider targets the LRZ GPU servers. The reported open-model
+benchmark in `BENCHMARK_RESULTS.md` was **not** run this way. All three open models
+were run locally through Ollama with GGUF weights at Q4\_K\_M quantization, so that
+no cross-model comparison mixes two quantization backends. Use the section below
+only if you want to reproduce on LRZ instead.
+
 Install the LRZ extras:
 
 ```bash
@@ -304,7 +333,7 @@ pip install -e ".[lrz]"
 Edit the relevant `configs/transformers.yaml` and set `model_path` to the local checkpoint:
 
 ```yaml
-model_path: /path/to/Qwen2.5-7B-Instruct
+model_path: /path/to/Qwen3-8B
 ```
 
 `torch` and `transformers` are imported lazily, so the package installs and runs locally without them.
@@ -323,4 +352,6 @@ model_path: /path/to/Qwen2.5-7B-Instruct
 
 ## References
 
-Saris, W. E., & Gallhofer, I. N. (2007). *Design, Evaluation, and Analysis of Questionnaires for Survey Research*. Wiley.
+Saris, W. E., & Gallhofer, I. (2004). Operationalization of social science concepts by intuition. *Quality & Quantity*, 38(3), 235-258. https://doi.org/10.1023/B:QUQU.0000031328.25370.e9
+
+Saris, W. E., & Gallhofer, I. N. (2014). *Design, Evaluation, and Analysis of Questionnaires for Survey Research* (2nd ed.). Wiley. https://doi.org/10.1002/9780470165195

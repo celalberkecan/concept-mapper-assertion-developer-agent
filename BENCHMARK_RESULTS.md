@@ -75,16 +75,16 @@ Bold = best value in that column (metric) across the four models, for that techn
 | Model | Basic concept acc. | Structure code acc. | Alignment 1-5 | Errors |
 |---|---|---|---|---|
 | gpt-4o-mini | **65.22%** | **48.91%** | 4.39 | **3** |
-| Llama-3.1-8B-Instruct | 46.74% | 29.55% | 4.23 | 14 |
+| Llama-3.1-8B-Instruct | 46.74% | 28.26% | 4.23 | 14 |
 | Qwen3-8B | 53.26% | 46.74% | 4.16 | 15 |
-| Granite-4.2-8B | 44.57% | 42.86% | **4.52** | 26 |
+| Granite-4.2-8B | 44.57% | 42.39% | **4.52** | 26 |
 
 ### (b) Prose few-shot
 
 | Model | Basic concept acc. | Structure code acc. | Alignment 1-5 | Errors |
 |---|---|---|---|---|
 | gpt-4o-mini | **60.87%** | 45.65% | **4.51** | **8** |
-| Llama-3.1-8B-Instruct | 54.35% | 36.26% | 4.36 | **8** |
+| Llama-3.1-8B-Instruct | 54.35% | 35.87% | 4.36 | **8** |
 | Qwen3-8B | 56.52% | 42.39% | 4.18 | 10 |
 | Granite-4.2-8B | 52.17% | **48.91%** | 4.29 | 16 |
 
@@ -95,16 +95,22 @@ Bold = best value in that column (metric) across the four models, for that techn
 | gpt-4o-mini | **60.87%** | 46.74% | **4.40** | 5 |
 | Llama-3.1-8B-Instruct | 57.61% | 40.22% | 4.27 | **2** |
 | Qwen3-8B | 57.61% | 44.57% | 4.39 | 10 |
-| Granite-4.2-8B | 56.52% | **48.35%** | 4.25 | 3 |
+| Granite-4.2-8B | 56.52% | **47.83%** | 4.25 | 3 |
 
 ### (d) GEPA-optimized
 
 | Model | Basic concept acc. | Structure code acc. | Alignment 1-5 | Errors |
 |---|---|---|---|---|
-| gpt-4o-mini | **71.74%** | **63.04%** | **4.38** | 2 |
+| gpt-4o-mini | **76.09%** | **63.04%** | **4.38** | 2 |
 | Llama-3.1-8B-Instruct | 53.26% | 38.04% | 4.30 | **1** |
 | Qwen3-8B | 47.83% | 42.39% | 3.99 | 11 |
 | Granite-4.2-8B | 59.78% | 58.70% | 4.12 | 9 |
+
+> **Note on structure-code accuracy.** Rows whose predicted basic concept is not in
+> the rule table now score as incorrect rather than being dropped from the
+> denominator, so every value in the structure-code columns is over 92 items.
+> Four cells changed: Llama zero-shot 29.55 to 28.26, Llama prose 36.26 to 35.87,
+> Granite zero-shot 42.86 to 42.39, Granite message-history 48.35 to 47.83.
 
 ## 4. Findings (verified against the raw summary.json files, not just asserted)
 

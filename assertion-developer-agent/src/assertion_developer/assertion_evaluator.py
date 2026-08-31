@@ -188,9 +188,15 @@ def evaluate_single_against_gold(
     if gold_structure_code:
         structure_code_correct: bool | None = pred_structure_code == gold_structure_code
     else:
+        # No gold code for this row, so fall back to "is the predicted code admissible
+        # for the predicted concept". If the predicted concept is not in the rule table
+        # at all, the prediction cannot be admissible, so it scores False rather than
+        # None. Returning None here would drop the row out of the denominator and make
+        # structure-code accuracy incomparable across models, since a model that invents
+        # more concept names would be scored over fewer items.
         rule = BASIC_CONCEPT_RULES.get(pred_basic_concept)
         structure_code_correct = (
-            pred_structure_code in rule["allowed_codes"] if rule else None
+            pred_structure_code in rule["allowed_codes"] if rule else False
         )
 
     result: dict[str, Any] = {
